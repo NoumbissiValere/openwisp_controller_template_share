@@ -1,8 +1,10 @@
 import json
+import collections
 
 from django import forms
 from django.contrib import admin
 from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 from django_netjsonconfig import settings as django_netjsonconfig_settings
 from django_netjsonconfig.base.admin import (AbstractConfigForm, AbstractConfigInline, AbstractDeviceAdmin,
                                              AbstractTemplateAdmin, AbstractVpnAdmin, AbstractVpnForm,
@@ -72,6 +74,15 @@ class TemplateForm(BaseForm):
     class Meta(BaseForm.Meta):
         model = Template
 
+    OPERATION_CHOICES = (
+        ('-', '----- {0} -----'.format(_('Please select an option'))),
+        ('new', _('Create new')),
+        ('import', _('Import Template'))
+    )
+    operation_type = forms.ChoiceField(choices=OPERATION_CHOICES)
+    url = forms.URLField(help_text='Please enter the URL to import template from', required=False)
+
+
 
 class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
     form = TemplateForm
@@ -81,6 +92,9 @@ class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
 TemplateAdmin.list_display.insert(1, 'organization')
 TemplateAdmin.list_filter.insert(0, ('organization', MultitenantOrgFilter))
 TemplateAdmin.fields.insert(1, 'organization')
+TemplateAdmin.fields.insert(0, 'operation_type')
+TemplateAdmin.fields.insert(3, 'url')
+TemplateAdmin.fields.insert(4, 'variable')
 
 
 class VpnForm(AbstractVpnForm):
