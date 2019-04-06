@@ -94,7 +94,6 @@ TemplateAdmin.list_filter.insert(0, ('organization', MultitenantOrgFilter))
 TemplateAdmin.fields.insert(1, 'organization')
 TemplateAdmin.fields.insert(0, 'operation_type')
 TemplateAdmin.fields.insert(3, 'url')
-TemplateAdmin.fields.insert(4, 'variable')
 
 
 class VpnForm(AbstractVpnForm):
