@@ -80,7 +80,20 @@ class TemplateForm(BaseForm):
         ('import', _('Import Template'))
     )
     operation_type = forms.ChoiceField(choices=OPERATION_CHOICES)
-    url = forms.URLField(help_text='Please enter the URL to import template from', required=False)
+    url = forms.URLField(help_text=_('Please enter the URL to import template from'), required=False)
+    variable = forms.CharField(help_text=_('Provide values for the list of variables found at the '
+                                     'detail page of this template at the Library'),
+                             initial={},
+                             widget=forms.Textarea,
+                             required=False)
+
+    def clean_valere(self):
+        jdata = self.cleaned_data['variable'],
+        try:
+            json.load(jdata)
+        except:
+            raise forms.ValidationError('variable', _('Invalid Json data'))
+        return jdata
 
 
 
@@ -94,6 +107,7 @@ TemplateAdmin.list_filter.insert(0, ('organization', MultitenantOrgFilter))
 TemplateAdmin.fields.insert(1, 'organization')
 TemplateAdmin.fields.insert(0, 'operation_type')
 TemplateAdmin.fields.insert(3, 'url')
+TemplateAdmin.fields.insert(4, 'variable')
 
 
 class VpnForm(AbstractVpnForm):
