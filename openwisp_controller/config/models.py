@@ -1,5 +1,7 @@
 import uuid
+import collections
 
+from jsonfield import JSONField
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -156,6 +158,24 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                             blank=True,
                             null=True,
                             on_delete=models.CASCADE)
+    url = models.URLField(_('URL'),
+                          blank=True,
+                          null=True,
+                          help_text=_('Enter URL to import template from'))
+    description = models.TextField(_('Description'),
+                                   blank=True,
+                                   null=True,
+                                   help_text=_('Enter public description of this template'))
+    notes = models.TextField(_('Notes'),
+                             blank=True,
+                             null=True,
+                             help_text=_('Enter internal notes for the administrators'))
+    variable = JSONField(_('Variable'),
+                         default=dict,
+                         blank=True,
+                         help_text=_('Enter Values for the variables used by this template'),
+                         load_kwargs = {'object_pairs_hook': collections.OrderedDict},
+                         dump_kwargs = {'indent': 4})
 
     class Meta(AbstractTemplate.Meta):
         abstract = False
@@ -163,6 +183,26 @@ class Template(ShareableOrgMixin, AbstractTemplate):
 
     def clean(self):
         self._validate_org_relation('vpn')
+        if self.flag == 'public' or self.flag == 'shared_secret':
+            if self.description is None:
+                raise ValidationError(('description'), _('Please enter public description of '
+                                                         'shared template'))
+            if self.notes is None:
+                raise ValidationError('notes', _('Please enter notes used by administrations of '
+                                                 'shared template'))
+            if self.variable is {}:
+                raise ValidationError('variable', _('Please enter sample values for variables '))
+            if self.flag == 'public':
+                self.url = 'http://{0}/api/templates/{1}'.format(self.url, self.id)
+            if self.flag == 'shared_secret':
+                self.url = 'http://{0}/api/templates/{1}/?key={2}'.format(self.url, self.id, self.key)
+
+        if self.flag == 'import':
+            if self.url is None:
+                raise ValidationError('url', _('Please enter the Url to import template from'))
+            if self.variable is {}:
+                raise ValidationError('variable', _('Please enter the values of the variables '
+                                                    'shown at the library'))
         super(Template, self).clean()
 
 
