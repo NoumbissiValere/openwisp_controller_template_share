@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.56.1', 'localhost', '127.0.0.1']
 
 DATABASES = {
     'default': {
@@ -16,6 +16,8 @@ DATABASES = {
 }
 
 SECRET_KEY = 'fn)t*+$)ugeyip6-#txyy$5wf2ervc0d2n#h)qb)y5@ly$t*@w'
+
+SPATIALITE_LIBRARY_PATH = 'mod_spatialite.so'
 
 INSTALLED_APPS = [
     'django.contrib.auth',
