@@ -95,6 +95,7 @@ class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
 
 
 TemplateAdmin.list_display.insert(1, 'organization')
+TemplateAdmin.list_display.insert(5, 'url')
 TemplateAdmin.list_filter.insert(0, ('organization', MultitenantOrgFilter))
 TemplateAdmin.fields.insert(1, 'organization')
 TemplateAdmin.fields.insert(3, 'url')

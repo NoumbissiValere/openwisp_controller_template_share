@@ -195,10 +195,10 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                                                  'shared template'))
             if self.variable is {}:
                 raise ValidationError('variable', _('Please enter sample values for variables '))
-            if self.flag == 'public':
-                self.url = 'http://{0}/api/templates/{1}'.format(self.url, self.id)
-            if self.flag == 'shared_secret':
-                self.url = 'http://{0}/api/templates/{1}/?key={2}'.format(self.url, self.id, self.key)
+            if self.flag == 'public' and str(self.id) not in str(self.url):
+                self.url = '{0}/api/templates/{1}'.format(self.url, self.id)
+            if self.flag == 'shared_secret' and str(self.id) not in str(self.url):
+                self.url = '{0}/api/templates/{1}/?key={2}'.format(self.url, self.id, self.key)
 
         if self.flag == 'import':
             if self.url is None:
