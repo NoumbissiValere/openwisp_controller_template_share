@@ -187,7 +187,6 @@ class Template(ShareableOrgMixin, AbstractTemplate):
 
     def clean(self):
         self._validate_org_relation('vpn')
-        super(Template, self).clean()
         if self.flag == 'public' or self.flag == 'shared_secret':
             if self.description is None:
                 raise ValidationError({'description': _('Please enter public description of '
@@ -215,7 +214,6 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                             self.config = json.dumps(data['config'])
                             self.url = data['url']
                             self.variable = json.dumps(data['variable'])
-                            self.name = data['name']
                             self.flag = data['flag']
                             self.vpn = data['vpn']
                             self.auto_cert = data['auto_cert']

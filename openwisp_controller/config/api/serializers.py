@@ -5,6 +5,6 @@ class TemplateRetrieveSerializer(ValidatedModelSerializer):
     class Meta:
         model = Template
         fields = ('id', 'type', 'variable', 'key', 'flag',
-                  'auto_cert', 'backend', 'vpn', 'url', 'name', 'config')
+                  'auto_cert', 'backend', 'vpn', 'url', 'config')
 
 
