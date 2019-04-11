@@ -49,8 +49,8 @@ class TemplatesVpnMixin(BaseMixin):
             templates = template_model.objects.filter(pk__in=pk_list)
         # lookg for invalid templates
         invalids = templates.exclude(organization=instance.device.organization) \
-                            .exclude(organization=None) \
-                            .values('name')
+            .exclude(organization=None) \
+            .values('name')
 
         if templates and invalids:
             names = ''
@@ -133,6 +133,7 @@ class TemplateTag(AbstractTemplateTag):
     """
     openwisp-controller TemplateTag model
     """
+
     class Meta(AbstractTemplateTag.Meta):
         abstract = False
 
@@ -178,22 +179,22 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                          default=dict,
                          blank=True,
                          help_text=_('Enter Values for the variables used by this template'),
-                         load_kwargs = {'object_pairs_hook': collections.OrderedDict},
-                         dump_kwargs = {'indent': 4})
+                         load_kwargs={'object_pairs_hook': collections.OrderedDict},
+                         dump_kwargs={'indent': 4})
 
     class Meta(AbstractTemplate.Meta):
         abstract = False
-        unique_together = (('organization', 'name'), )
+        unique_together = (('organization', 'name'),)
 
     def clean(self):
         self._validate_org_relation('vpn')
         if self.flag == 'public' or self.flag == 'shared_secret':
             if self.description is None:
                 raise ValidationError({'description': _('Please enter public description of '
-                                                         'shared template')})
+                                                        'shared template')})
             if self.notes is None:
                 raise ValidationError({'notes': _('Please enter notes used by administrations of '
-                                                 'shared template')})
+                                                  'shared template')})
             if self.variable is {}:
                 raise ValidationError({'variable': _('Please enter sample values for variables ')})
             if self.flag == 'public' and str(self.id) not in str(self.url):
@@ -223,7 +224,6 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                             raise ValidationError({'url', _('Url is not valid')})
                 except urllib.request.HTTPError:
                     raise ValidationError({'url': _('Url is not valid. Please check it')})
-
 
 
 class Vpn(ShareableOrgMixin, AbstractVpn):
