@@ -1,5 +1,6 @@
 import uuid
 import collections
+import json, urllib.request
 
 from jsonfield import JSONField
 from django.conf import settings
@@ -186,27 +187,45 @@ class Template(ShareableOrgMixin, AbstractTemplate):
 
     def clean(self):
         self._validate_org_relation('vpn')
+        super(Template, self).clean()
         if self.flag == 'public' or self.flag == 'shared_secret':
             if self.description is None:
-                raise ValidationError(('description'), _('Please enter public description of '
-                                                         'shared template'))
+                raise ValidationError({'description': _('Please enter public description of '
+                                                         'shared template')})
             if self.notes is None:
-                raise ValidationError('notes', _('Please enter notes used by administrations of '
-                                                 'shared template'))
+                raise ValidationError({'notes': _('Please enter notes used by administrations of '
+                                                 'shared template')})
             if self.variable is {}:
-                raise ValidationError('variable', _('Please enter sample values for variables '))
+                raise ValidationError({'variable': _('Please enter sample values for variables ')})
             if self.flag == 'public' and str(self.id) not in str(self.url):
-                self.url = '{0}/api/templates/{1}'.format(self.url, self.id)
+                self.url = '{0}/api/v1/template/{1}'.format(self.url, self.id)
             if self.flag == 'shared_secret' and str(self.id) not in str(self.url):
-                self.url = '{0}/api/templates/{1}/?key={2}'.format(self.url, self.id, self.key)
+                self.url = '{0}/api/v1/template/{1}/?key={2}'.format(self.url, self.id, self.key)
 
         if self.flag == 'import':
             if self.url is None:
-                raise ValidationError('url', _('Please enter the Url to import template from'))
-            if self.variable is {}:
-                raise ValidationError('variable', _('Please enter the values of the variables '
-                                                    'shown at the library'))
-        super(Template, self).clean()
+                raise ValidationError({'url': _('Please enter the Url to import template from')})
+            else:
+                try:
+                    with urllib.request.urlopen(self.url) as response:
+                        try:
+                            data = json.loads(response.read().decode())
+                            self.id = data['id']
+                            self.type = data['type']
+                            self.config = json.dumps(data['config'])
+                            self.url = data['url']
+                            self.variable = json.dumps(data['variable'])
+                            self.name = data['name']
+                            self.flag = data['flag']
+                            self.vpn = data['vpn']
+                            self.auto_cert = data['auto_cert']
+                            self.backend = data['backend']
+                            self.key = data['key']
+                        except ValueError:
+                            raise ValidationError({'url', _('Url is not valid')})
+                except urllib.request.HTTPError:
+                    raise ValidationError({'url': _('Url is not valid. Please check it')})
+
 
 
 class Vpn(ShareableOrgMixin, AbstractVpn):
