@@ -4,6 +4,7 @@ from ...config.models import Template
 class TemplateRetrieveSerializer(ValidatedModelSerializer):
     class Meta:
         model = Template
-        fields = ('name', 'organization', 'backend', 'config',
-                  'type')
+        fields = ('id', 'type', 'variable', 'key', 'flag',
+                  'auto_cert', 'backend', 'vpn', 'url', 'name', 'config')
+
 
