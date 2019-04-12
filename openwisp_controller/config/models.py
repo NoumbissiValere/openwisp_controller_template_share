@@ -189,13 +189,13 @@ class Template(ShareableOrgMixin, AbstractTemplate):
     def clean(self):
         self._validate_org_relation('vpn')
         if self.flag == 'public' or self.flag == 'shared_secret':
-            if self.description is None:
+            if not self.description:
                 raise ValidationError({'description': _('Please enter public description of '
                                                         'shared template')})
-            if self.notes is None:
+            if not self.notes:
                 raise ValidationError({'notes': _('Please enter notes used by administrations of '
                                                   'shared template')})
-            if self.variable is {}:
+            if self.variable == {}:
                 raise ValidationError({'variable': _('Please enter sample values for variables ')})
             if self.flag == 'public' and str(self.id) not in str(self.url):
                 self.url = '{0}/api/v1/template/{1}'.format(self.url, self.id)
@@ -215,7 +215,6 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                             self.config = json.dumps(eval(data['config']))
                             self.url = data['url']
                             self.variable = json.dumps(eval(data['variable']))
-                            self.flag = data['flag']
                             self.vpn = data['vpn']
                             self.auto_cert = data['auto_cert']
                             self.backend = data['backend']
@@ -224,6 +223,7 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                             raise ValidationError({'url', _('Url is not valid')})
                 except urllib.request.HTTPError:
                     raise ValidationError({'url': _('Url is not valid. Please check it')})
+        super(Template, self).clean()
 
 
 class Vpn(ShareableOrgMixin, AbstractVpn):
