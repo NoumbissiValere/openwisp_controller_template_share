@@ -1,5 +1,5 @@
 import uuid
-import collections
+from collections import OrderedDict
 import json, urllib.request
 
 from jsonfield import JSONField
@@ -179,7 +179,7 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                          default=dict,
                          blank=True,
                          help_text=_('Enter Values for the variables used by this template'),
-                         load_kwargs={'object_pairs_hook': collections.OrderedDict},
+                         load_kwargs={'object_pairs_hook': OrderedDict},
                          dump_kwargs={'indent': 4})
 
     class Meta(AbstractTemplate.Meta):
@@ -212,14 +212,14 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                             data = json.loads(response.read().decode())
                             self.id = data['id']
                             self.type = data['type']
-                            self.config = json.dumps(data['config'])
+                            self.config = json.dumps(eval(data['config']))
                             self.url = data['url']
-                            self.variable = json.dumps(data['variable'])
+                            self.variable = json.dumps(eval(data['variable']))
                             self.flag = data['flag']
                             self.vpn = data['vpn']
                             self.auto_cert = data['auto_cert']
                             self.backend = data['backend']
-                            self.key = data['key']
+                            #self.key = data['key']
                         except ValueError:
                             raise ValidationError({'url', _('Url is not valid')})
                 except urllib.request.HTTPError:
