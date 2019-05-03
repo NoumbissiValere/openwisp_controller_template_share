@@ -1,8 +1,8 @@
 import uuid
-from collections import OrderedDict
-import json, urllib.request
+import collections
+import numbers
 
-from jsonfield import JSONField
+from django.urls import reverse
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -17,6 +17,7 @@ from django_netjsonconfig.base.template import AbstractTemplate
 from django_netjsonconfig.base.vpn import AbstractVpn, AbstractVpnClient
 from django_netjsonconfig.utils import get_random_key
 from django_netjsonconfig.validators import key_validator, mac_address_validator
+from openwisp_utils.base import TimeStampedEditableModel
 from sortedm2m.fields import SortedManyToManyField
 from taggit.managers import TaggableManager
 
@@ -167,20 +168,6 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                           blank=True,
                           null=True,
                           help_text=_('Enter URL to import template from'))
-    description = models.TextField(_('Description'),
-                                   blank=True,
-                                   null=True,
-                                   help_text=_('Enter public description of this template'))
-    notes = models.TextField(_('Notes'),
-                             blank=True,
-                             null=True,
-                             help_text=_('Enter internal notes for the administrators'))
-    variable = JSONField(_('Variable'),
-                         default=dict,
-                         blank=True,
-                         help_text=_('Enter Values for the variables used by this template'),
-                         load_kwargs={'object_pairs_hook': OrderedDict},
-                         dump_kwargs={'indent': 4})
 
     class Meta(AbstractTemplate.Meta):
         abstract = False
@@ -188,42 +175,36 @@ class Template(ShareableOrgMixin, AbstractTemplate):
 
     def clean(self):
         self._validate_org_relation('vpn')
-        if self.flag == 'public' or self.flag == 'shared_secret':
-            if not self.description:
-                raise ValidationError({'description': _('Please enter public description of '
-                                                        'shared template')})
-            if not self.notes:
-                raise ValidationError({'notes': _('Please enter notes used by administrations of '
-                                                  'shared template')})
-            if self.variable == {}:
-                raise ValidationError({'variable': _('Please enter sample values for variables ')})
-            if self.flag == 'public' and str(self.id) not in str(self.url):
-                self.url = '{0}/api/v1/template/{1}'.format(self.url, self.id)
-            if self.flag == 'shared_secret' and str(self.id) not in str(self.url):
-                self.url = '{0}/api/v1/template/{1}/?key={2}'.format(self.url, self.id, self.key)
-
-        if self.flag == 'import':
-            if self.url is None:
-                raise ValidationError({'url': _('Please enter the Url to import template from')})
-            else:
-                try:
-                    with urllib.request.urlopen(self.url) as response:
-                        try:
-                            data = json.loads(response.read().decode())
-                            self.id = data['id']
-                            self.type = data['type']
-                            self.config = json.dumps(eval(data['config']))
-                            self.url = data['url']
-                            self.variable = json.dumps(eval(data['variable']))
-                            self.vpn = data['vpn']
-                            self.auto_cert = data['auto_cert']
-                            self.backend = data['backend']
-                            #self.key = data['key']
-                        except ValueError:
-                            raise ValidationError({'url', _('Url is not valid')})
-                except urllib.request.HTTPError:
-                    raise ValidationError({'url': _('Url is not valid. Please check it')})
         super(Template, self).clean()
+        if self.flag == 'public':
+            print("getting self.url", self.url, "\n\n\n\n")
+            url = reverse('share_template', kwargs={'uuid': self.pk})
+            self.url = '{0}{1}'.format(self.url, url)
+        if self.flag == 'shared_secret':
+            url = reverse('share_template', kwargs={'uuid': self.pk})
+            self.url = '{0}{1}?key={2}'.format(self.url, url, self.key)
+        if self.flag == 'private':
+            self.url = None
+        self.config = self._update(self.config, self.variable)
+
+    def _update(self, config, variable):
+        for k, v in variable.items():
+            try:
+                if isinstance(v, str) or isinstance(v, numbers.Number):
+                    config[k] = v
+                if isinstance(v, collections.Mapping):
+                    config[k] = self._update(config.get(k), v)
+                if isinstance(v, list):
+                    position = 0
+                    while position < len(v):
+                        if isinstance(v[position], str):
+                            config[k][position] = v[position]
+                        if isinstance(v[position], collections.Mapping):
+                            config[k][position] = self._update(config[k][position], v[position])
+                        position += 1
+            except KeyError:
+                raise ValidationError(_("configuration for {0} variable doesn't exists".format(k)))
+        return config
 
 
 class Vpn(ShareableOrgMixin, AbstractVpn):
@@ -308,3 +289,23 @@ class OrganizationConfigSettings(models.Model):
 
     def __str__(self):
         return self.organization.name
+
+
+class BaseNotification(TimeStampedEditableModel):
+    subscriber = models.URLField(_('Subscriber domain'),
+                                     max_length=16,
+                                     db_index=True,)
+    template = models.ForeignKey(Template, on_delete=models.CASCADE)
+
+    class Meta(TimeStampedEditableModel.Meta):
+        abstract = True
+
+
+class Subscribe(BaseNotification):
+    class Meta:
+        abstract = False
+
+
+class Unsubscribe(BaseNotification):
+    class Meta:
+        abstract = False
