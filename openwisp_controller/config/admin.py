@@ -11,9 +11,10 @@ from django_netjsonconfig.base.admin import (AbstractConfigForm, AbstractConfigI
 from openwisp_users.models import Organization
 from openwisp_users.multitenancy import MultitenantOrgFilter, MultitenantRelatedOrgFilter
 from openwisp_utils.admin import AlwaysHasChangedMixin
+from django.utils.translation import gettext_lazy as _
 
 from ..admin import MultitenantAdminMixin
-from .models import Config, Device, OrganizationConfigSettings, Template, Vpn
+from .models import Config, Device, OrganizationConfigSettings, Template, Vpn, Subscribe, Unsubscribe
 
 
 class ConfigForm(AlwaysHasChangedMixin, AbstractConfigForm):
@@ -84,24 +85,57 @@ class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
     form = TemplateForm
     multitenant_shared_relations = ('vpn',)
 
+    def subscribe(self, obj):
+        if obj:
+            count = Subscribe.objects.filter(template=obj.pk).count()
+            return count
+    subscribe.short_description = _('Subscribed')
+
+    def unsubscribe(self, obj):
+        if obj:
+            count = Unsubscribe.objects.filter(template=obj.pk).count()
+            return count
+    unsubscribe.short_description = _('Unsubscribed')
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = super(TemplateAdmin, self).get_readonly_fields(request, obj)
+        return readonly_fields + ('subscribe', 'unsubscribe')
+
+    def get_fields(self, request, obj=None):
+        fields = super(TemplateAdmin, self).get_fields(request, obj)
+        if obj.flag=='import':
+            fields = tuple(fields)
+            return fields + ('subscribe', 'unsubscribe')
+        return fields
+
     def add_view(self, request, form_url='', extra_context=None):
         if request.POST:
             if request.POST.get('flag') == 'public' or \
-                    request.POST.get('flag') == 'shared_secret':
+                    request.POST.get('flag') == 'shared_secret' or \
+                    request.POST.get('flag') == 'import':
                 domain = request.META['HTTP_HOST']
                 request.POST = request.POST.copy()
                 request.POST['url'] = domain
         return super(TemplateAdmin, self).add_view(request, form_url, extra_context)
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if request.POST:
+            if request.POST.get('flag') == 'public' or \
+                    request.POST.get('flag') == 'shared_secret' or \
+                    request.POST.get('flag') == 'import':
+                domain = request.META['HTTP_HOST']
+                request.POST = request.POST.copy()
+                request.POST['url'] = domain
+        return super(TemplateAdmin, self).change_view(request, object_id, form_url, extra_context)
+
 
 TemplateAdmin.list_display.insert(1, 'organization')
 TemplateAdmin.list_display.insert(5, 'url')
 TemplateAdmin.list_filter.insert(0, ('organization', MultitenantOrgFilter))
+# TemplateAdmin.fields.insert(0, 'subscribe')
+# TemplateAdmin.fields.insert(1, 'unsubscribe')
 TemplateAdmin.fields.insert(1, 'organization')
 TemplateAdmin.fields.insert(3, 'url')
-TemplateAdmin.fields.insert(6, 'variable')
-TemplateAdmin.fields.insert(7, 'description')
-TemplateAdmin.fields.insert(8, 'notes')
 
 
 class VpnForm(AbstractVpnForm):
