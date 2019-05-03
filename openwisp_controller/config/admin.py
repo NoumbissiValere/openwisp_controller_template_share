@@ -111,8 +111,7 @@ class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
     def add_view(self, request, form_url='', extra_context=None):
         if request.POST:
             if request.POST.get('flag') == 'public' or \
-                    request.POST.get('flag') == 'shared_secret' or \
-                    request.POST.get('flag') == 'import':
+                    request.POST.get('flag') == 'shared_secret':
                 domain = request.META['HTTP_HOST']
                 request.POST = request.POST.copy()
                 request.POST['url'] = domain
@@ -121,8 +120,7 @@ class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
     def change_view(self, request, object_id, form_url='', extra_context=None):
         if request.POST:
             if request.POST.get('flag') == 'public' or \
-                    request.POST.get('flag') == 'shared_secret' or \
-                    request.POST.get('flag') == 'import':
+                    request.POST.get('flag') == 'shared_secret':
                 domain = request.META['HTTP_HOST']
                 request.POST = request.POST.copy()
                 request.POST['url'] = domain

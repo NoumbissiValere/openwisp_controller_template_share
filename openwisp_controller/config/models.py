@@ -204,6 +204,8 @@ class Template(ShareableOrgMixin, AbstractTemplate):
                         position += 1
             except KeyError:
                 raise ValidationError(_("configuration for {0} variable doesn't exists".format(k)))
+            except IndexError:
+                raise ValidationError(_("configuration for {0} variable doesn't exists".format(k)))
         return config
 
 
