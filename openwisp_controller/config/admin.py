@@ -103,7 +103,7 @@ class TemplateAdmin(MultitenantAdminMixin, AbstractTemplateAdmin):
 
     def get_fields(self, request, obj=None):
         fields = super(TemplateAdmin, self).get_fields(request, obj)
-        if obj.flag=='import':
+        if obj and obj.flag=='import':
             fields = tuple(fields)
             return fields + ('subscribe', 'unsubscribe')
         return fields
